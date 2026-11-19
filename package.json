@@ -1,0 +1,1 @@
+{"name":"skyshield","scripts":{"start":"concurrently -n LB,FOG,UI -c blue,yellow,green \"node lb/lb.js\" \"node fog/fog.js\" \"npm --prefix frontend run dev\""},"devDependencies":{"concurrently":"^9.1.2"}}
