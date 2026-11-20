@@ -24,6 +24,7 @@ export default function Sos() {
   const [landmark, setLandmark] = useState('');
   const [status, setStatus] = useState('');
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [liveIncidents, setLiveIncidents] = useState([]);
 
   useEffect(() => {
@@ -65,7 +66,7 @@ export default function Sos() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setStatus('Transmitting encrypted SOS packet to nearest Edge Fog Node...');
+    setStatus('Transmitting encrypted SOS packet to SkyShield Grid...');
     const res = await sendSOS({
       lat: pos[0],
       lng: pos[1],
@@ -76,11 +77,36 @@ export default function Sos() {
       vulnerable,
       landmark,
     });
-    setStatus(
-      res === 'sent-to-fog'
-        ? 'CONFIRMED: SOS Received by Local Edge Fog Gateway & Queued for Priority Dispatch!'
-        : 'OFFLINE SAVED: No network detected — SOS stored safely in Device IndexedDB and will auto-sync!'
-    );
+
+    if (res === 'sent-to-fog') {
+      setStatus('CONFIRMED: SOS Received by Edge Fog Gateway & Queued for Priority Dispatch!');
+    } else if (res === 'sent-to-cloud') {
+      setStatus('CONFIRMED: SOS Routed via Cloud L7 Load Balancer to Live Command Center!');
+    } else if (res === 'sent-to-firestore') {
+      setStatus('CONFIRMED: SOS Synced Directly to Cloud Command Grid & Armed for Dispatch!');
+    } else {
+      setStatus('OFFLINE SAVED: No network detected — SOS stored safely in Device IndexedDB and will auto-sync!');
+    }
+  }
+
+  async function handleManualSync() {
+    setSyncing(true);
+    setStatus('Flushing offline IndexedDB queue to SkyShield Cloud...');
+    try {
+      const result = await flushQueue();
+      const synced = result?.synced ?? 0;
+      const remaining = result?.remaining ?? 0;
+
+      if (synced > 0) {
+        setStatus(`CONFIRMED: Synced ${synced} queued SOS alert(s) to Live Command Center!`);
+      } else if (remaining > 0) {
+        setStatus(`OFFLINE SAVED: Still unable to reach cloud — ${remaining} SOS alert(s) safely held in IndexedDB.`);
+      } else {
+        setStatus('CONFIRMED: Offline queue is empty — all SOS alerts are already synced!');
+      }
+    } finally {
+      setSyncing(false);
+    }
   }
 
   return (
@@ -285,7 +311,8 @@ export default function Sos() {
 
           <button
             type="button"
-            onClick={flushQueue}
+            onClick={handleManualSync}
+            disabled={syncing}
             style={{
               marginTop: 12,
               width: '100%',
@@ -294,12 +321,12 @@ export default function Sos() {
               color: '#1C1917',
               border: '1.5px solid #FFB74D',
               borderRadius: 10,
-              cursor: 'pointer',
+              cursor: syncing ? 'wait' : 'pointer',
               fontSize: 13,
               fontWeight: 700,
             }}
           >
-            Sync Offline IndexedDB Queue Now
+            {syncing ? 'Syncing Offline Queue...' : 'Sync Offline IndexedDB Queue Now'}
           </button>
         </div>
 
