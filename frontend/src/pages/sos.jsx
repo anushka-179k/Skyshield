@@ -41,24 +41,34 @@ export default function Sos() {
   }
 
   return (
-    <div style={{ maxWidth: 640, margin: '24px auto', padding: '0 20px' }}>
-      <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 14, padding: 24, boxShadow: '0 10px 25px rgba(0,0,0,0.4)' }}>
-        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Citizen Emergency SOS Beacon</h2>
-        <p style={{ fontSize: 13, color: '#94a3b8', marginBottom: 14 }}>
+    <div style={{ maxWidth: 680, margin: '32px auto', padding: '0 20px' }}>
+      <div className="sky-card" style={{ padding: 28, border: '2px solid #FFB74D' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1C1917' }}>Citizen Emergency SOS Beacon</h2>
+          <span
+            className="animate-alert-jump font-mono-tech"
+            style={{ background: '#DC2626', color: '#FFFFFF', fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 6 }}
+          >
+            ● LIVE DISPATCH
+          </span>
+        </div>
+        <p className="font-mono-tech" style={{ fontSize: 12.5, color: '#44403C', marginBottom: 16 }}>
           Tap the map to drop your GPS pin ({pos[0].toFixed(4)}, {pos[1].toFixed(4)})
         </p>
 
-        <div style={{ height: 240, marginBottom: 18, border: '1px solid #334155', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ height: 240, marginBottom: 20, border: '2px solid #FFB74D', borderRadius: 12, overflow: 'hidden' }}>
           <MapContainer center={pos} zoom={12} style={{ height: '100%', width: '100%' }}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <LocationPicker pos={pos} setPos={setPos} />
           </MapContainer>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 14 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>EMERGENCY TYPE</label>
+              <label className="font-mono-tech" style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#44403C', marginBottom: 6 }}>
+                EMERGENCY TYPE
+              </label>
               <select value={type} onChange={(e) => setType(e.target.value)} style={{ width: '100%' }}>
                 <option value="flood">Flash Flood / Waterlogged</option>
                 <option value="medical">Medical Emergency</option>
@@ -67,7 +77,9 @@ export default function Sos() {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>RESOURCE NEEDED</label>
+              <label className="font-mono-tech" style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#44403C', marginBottom: 6 }}>
+                RESOURCE NEEDED
+              </label>
               <select value={need} onChange={(e) => setNeed(e.target.value)} style={{ width: '100%' }}>
                 <option value="boat">Rescue Boat</option>
                 <option value="medical">Ambulance / Paramedics</option>
@@ -76,37 +88,42 @@ export default function Sos() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>SEVERITY (1–5)</label>
+              <label className="font-mono-tech" style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#44403C', marginBottom: 6 }}>
+                SEVERITY (1–5)
+              </label>
               <input type="number" min="1" max="5" value={severity} onChange={(e) => setSeverity(e.target.value)} style={{ width: '100%' }} />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: 12, color: '#94a3b8', marginBottom: 6 }}>PEOPLE STRANDED</label>
+              <label className="font-mono-tech" style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: '#44403C', marginBottom: 6 }}>
+                PEOPLE STRANDED
+              </label>
               <input type="number" min="1" max="100" value={people} onChange={(e) => setPeople(e.target.value)} style={{ width: '100%' }} />
             </div>
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#cbd5e1', cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 600, color: '#1C1917', cursor: 'pointer', background: '#FFF3E0', padding: '10px 14px', borderRadius: 10, border: '1px solid #FFB74D' }}>
             <input type="checkbox" checked={vulnerable} onChange={(e) => setVulnerable(e.target.checked)} />
             Elderly, infants, or differently-abled individuals present (+15 Priority Boost)
           </label>
 
           <button
             type="submit"
+            className="animate-alert-jump"
             style={{
-              background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
-              color: 'white',
-              padding: '14px',
+              background: '#DC2626',
+              color: '#FFFFFF',
+              padding: '15px',
               fontSize: 16,
-              fontWeight: 700,
+              fontWeight: 800,
               letterSpacing: '0.5px',
               border: 'none',
-              borderRadius: 8,
+              borderRadius: 12,
               cursor: 'pointer',
               marginTop: 4,
-              boxShadow: '0 4px 14px rgba(220, 38, 38, 0.4)',
+              boxShadow: '0 8px 20px rgba(220, 38, 38, 0.35)',
             }}
           >
             BROADCAST EMERGENCY SOS
@@ -115,14 +132,15 @@ export default function Sos() {
 
         {status && (
           <div
+            className="animate-alert-pop"
             style={{
-              marginTop: 16,
-              padding: '12px 14px',
-              borderRadius: 8,
-              background: status.includes('CONFIRMED') ? 'rgba(22, 163, 74, 0.18)' : 'rgba(217, 119, 6, 0.2)',
-              border: `1px solid ${status.includes('CONFIRMED') ? '#22c55e' : '#f59e0b'}`,
-              color: status.includes('CONFIRMED') ? '#4ade80' : '#fbbf24',
-              fontWeight: 600,
+              marginTop: 18,
+              padding: '14px 16px',
+              borderRadius: 12,
+              background: status.includes('CONFIRMED') ? '#DCFCE7' : '#FEF3C7',
+              border: `2px solid ${status.includes('CONFIRMED') ? '#16A34A' : '#E65100'}`,
+              color: status.includes('CONFIRMED') ? '#14532D' : '#9A3412',
+              fontWeight: 800,
               fontSize: 14,
             }}
           >
@@ -133,15 +151,16 @@ export default function Sos() {
         <button
           onClick={flushQueue}
           style={{
-            marginTop: 12,
+            marginTop: 14,
             width: '100%',
-            padding: '10px',
-            background: '#1e293b',
-            color: '#cbd5e1',
-            border: '1px solid #334155',
-            borderRadius: 8,
+            padding: '11px',
+            background: '#FFE0B2',
+            color: '#1C1917',
+            border: '1.5px solid #FFB74D',
+            borderRadius: 10,
             cursor: 'pointer',
-            fontSize: 13,
+            fontSize: 13.5,
+            fontWeight: 700,
           }}
         >
           Force Sync Offline Device Queue

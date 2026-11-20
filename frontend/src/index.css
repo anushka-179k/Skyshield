@@ -4,44 +4,150 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background-color: #0b1120;
-  color: #f1f5f9;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #FFF3E0;
+  color: #1C1917;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-image: radial-gradient(rgba(230, 81, 0, 0.16) 1px, transparent 1px);
+  background-size: 24px 24px;
+  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-button {
-  font-family: inherit;
-  transition: all 0.15s ease;
+h1, h2, h3, h4, .font-display {
+  font-family: 'Space Grotesk', sans-serif;
 }
 
-button:hover:not(:disabled) {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
+.font-mono-tech {
+  font-family: 'JetBrains Mono', monospace;
 }
 
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-select, input[type="number"] {
-  background-color: #1e293b;
-  color: #f8fafc;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  padding: 8px 12px;
+/* Inputs & Selects styled for Candlelight theme */
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  background: #FFF3E0;
+  color: #1C1917;
+  border: 1.5px solid #FFB74D;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.leaflet-popup-content-wrapper {
-  background: #1e293b !important;
-  color: #f8fafc !important;
-  border: 1px solid #334155;
-  border-radius: 8px !important;
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #E65100;
+  box-shadow: 0 0 0 3px rgba(230, 81, 0, 0.18);
 }
 
-.leaflet-popup-tip {
-  background: #1e293b !important;
+/* Sticky Glassmorphism Navbar */
+.glass-nav {
+  background: rgba(255, 243, 224, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1.5px solid rgba(230, 81, 0, 0.18);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: box-shadow 0.3s ease, background 0.3s ease;
+}
+
+.glass-nav.scrolled {
+  background: rgba(255, 243, 224, 0.96);
+  box-shadow: 0 10px 30px -10px rgba(28, 25, 23, 0.14);
+}
+
+/* Bold Jumping & Popping Red Alert Animations */
+@keyframes alertJump {
+  0%, 100% { transform: translateY(0) scale(1); }
+  15% { transform: translateY(-7px) scale(1.03); }
+  30% { transform: translateY(0) scale(0.99); }
+  45% { transform: translateY(-4px) scale(1.01); }
+  60% { transform: translateY(0) scale(1); }
+}
+
+@keyframes alertPopIn {
+  0% { opacity: 0; transform: scale(0.75) translateY(20px); }
+  70% { opacity: 1; transform: scale(1.04) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes sirenGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55); }
+  50% { box-shadow: 0 0 24px 6px rgba(220, 38, 38, 0.32); }
+}
+
+@keyframes pulsePing {
+  0% { transform: scale(1); opacity: 0.9; }
+  75%, 100% { transform: scale(2.1); opacity: 0; }
+}
+
+.animate-alert-jump {
+  animation: alertJump 2.2s cubic-bezier(0.28, 0.84, 0.42, 1) infinite;
+}
+
+.animate-alert-pop {
+  animation: alertPopIn 0.65s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             sirenGlow 2s infinite;
+}
+
+.live-dot-wrapper {
+  position: relative;
+  display: inline-flex;
+  width: 10px;
+  height: 10px;
+}
+
+.live-dot-ping {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: pulsePing 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.live-dot-core {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Card Hover Elevation + Accent Border Glow */
+.sky-card {
+  background: #FFFFFF;
+  border: 1.5px solid rgba(230, 81, 0, 0.2);
+  border-radius: 16px;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.28s ease,
+              border-color 0.28s ease;
+}
+
+.sky-card:hover {
+  transform: translateY(-4px);
+  border-color: #E65100;
+  box-shadow: 0 16px 32px -12px rgba(230, 81, 0, 0.24),
+              0 0 0 3px rgba(255, 183, 77, 0.38);
+}
+
+/* Scroll-Triggered Stagger Reveal */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal-item.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
