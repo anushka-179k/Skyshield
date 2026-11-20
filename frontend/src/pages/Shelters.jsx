@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const LB = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
-export default function Shelters() {
+export default function Shelters({ isAdmin }) {
   const [shelters, setShelters] = useState([]);
   const [cacheStatus, setCacheStatus] = useState('—');
   const [latencyMs, setLatencyMs] = useState(0);
@@ -53,9 +54,13 @@ export default function Shelters() {
     <div style={{ maxWidth: 1200, margin: '28px auto', padding: '0 24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1C1917', marginBottom: 4 }}>Relief Shelter Inventory &amp; Redis Cache</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1C1917', marginBottom: 4 }}>
+            {isAdmin ? 'Relief Shelter Inventory & Redis Cache' : 'Public Relief Shelters & Safe Zones'}
+          </h1>
           <p style={{ fontSize: 14, color: '#44403C' }}>
-            Cache-Aside pattern with 15s TTL &amp; automatic cache invalidation on writes
+            {isAdmin
+              ? 'Cache-Aside pattern with 15s TTL & automatic cache invalidation on writes'
+              : 'Live bed capacity and emergency ration availability across New Delhi NCR relief camps'}
           </p>
         </div>
 
@@ -64,31 +69,33 @@ export default function Shelters() {
           disabled={loading}
           style={{ background: '#E65100', color: '#FFFFFF', padding: '12px 20px', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', boxShadow: '0 6px 16px rgba(230, 81, 0, 0.25)' }}
         >
-          {loading ? 'Querying...' : 'Refresh Shelters (Test Redis Cache)'}
+          {loading ? 'Refreshing...' : isAdmin ? 'Refresh Shelters (Test Redis Cache)' : 'Refresh Live Availability'}
         </button>
       </div>
 
-      {/* Telemetry Banner */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <div className="sky-card" style={{ padding: '16px 20px', borderColor: cacheStatus === 'HIT' ? '#16A34A' : '#E65100' }}>
-          <div className="font-mono-tech" style={{ fontSize: 11, fontWeight: 800, color: '#44403C' }}>UPSTASH REDIS CACHE STATUS</div>
-          <div className="font-display" style={{ fontSize: 22, fontWeight: 800, color: cacheStatus === 'HIT' ? '#16A34A' : '#E65100', marginTop: 4 }}>
-            {cacheStatus === 'HIT' ? 'CACHE HIT (IN-MEMORY)' : 'CACHE MISS (FIRESTORE DB)'}
+      {/* ADMIN-ONLY REDIS CACHE TELEMETRY BANNER */}
+      {isAdmin && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 24 }}>
+          <div className="sky-card" style={{ padding: '16px 20px', borderColor: cacheStatus === 'HIT' ? '#16A34A' : '#E65100' }}>
+            <div className="font-mono-tech" style={{ fontSize: 11, fontWeight: 800, color: '#44403C' }}>UPSTASH REDIS CACHE STATUS</div>
+            <div className="font-display" style={{ fontSize: 22, fontWeight: 800, color: cacheStatus === 'HIT' ? '#16A34A' : '#E65100', marginTop: 4 }}>
+              {cacheStatus === 'HIT' ? 'CACHE HIT (IN-MEMORY)' : 'CACHE MISS (FIRESTORE DB)'}
+            </div>
+          </div>
+
+          <div className="sky-card" style={{ padding: '16px 20px' }}>
+            <div className="font-mono-tech" style={{ fontSize: 11, fontWeight: 800, color: '#44403C' }}>ROUND-TRIP API LATENCY</div>
+            <div className="font-display" style={{ fontSize: 24, fontWeight: 800, color: '#1C1917', marginTop: 4 }}>{latencyMs} ms</div>
+          </div>
+
+          <div className="sky-card" style={{ padding: '16px 20px' }}>
+            <div className="font-mono-tech" style={{ fontSize: 11, fontWeight: 800, color: '#44403C' }}>SERVED BY CLOUD WORKER</div>
+            <div className="font-display" style={{ fontSize: 24, fontWeight: 800, color: '#E65100', marginTop: 4 }}>{servedBy}</div>
           </div>
         </div>
+      )}
 
-        <div className="sky-card" style={{ padding: '16px 20px' }}>
-          <div className="font-mono-tech" style={{ fontSize: 11, fontWeight: 800, color: '#44403C' }}>ROUND-TRIP API LATENCY</div>
-          <div className="font-display" style={{ fontSize: 24, fontWeight: 800, color: '#1C1917', marginTop: 4 }}>{latencyMs} ms</div>
-        </div>
-
-        <div className="sky-card" style={{ padding: '16px 20px' }}>
-          <div className="font-mono-tech" style={{ fontSize: 11, fontWeight: 800, color: '#44403C' }}>SERVED BY CLOUD WORKER</div>
-          <div className="font-display" style={{ fontSize: 24, fontWeight: 800, color: '#E65100', marginTop: 4 }}>{servedBy}</div>
-        </div>
-      </div>
-
-      {/* Shelter Cards */}
+      {/* SHELTER CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 18 }}>
         {shelters.map((sh) => {
           const pct = Math.round((sh.bedsFree / (sh.bedsTotal || 1)) * 100);
@@ -96,8 +103,8 @@ export default function Shelters() {
             <div key={sh.id} className="sky-card" style={{ padding: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1C1917' }}>{sh.name}</h3>
-                <span className="font-mono-tech" style={{ fontSize: 11, background: '#FFE0B2', color: '#E65100', padding: '4px 10px', borderRadius: 99, fontWeight: 800 }}>
-                  {pct}% Free
+                <span className="font-mono-tech" style={{ fontSize: 11, background: pct > 30 ? '#DCFCE7' : '#FEE2E2', color: pct > 30 ? '#15803D' : '#DC2626', padding: '4px 10px', borderRadius: 99, fontWeight: 800 }}>
+                  {pct}% Open
                 </span>
               </div>
 
@@ -112,20 +119,40 @@ export default function Shelters() {
                 Emergency Food Rations: <b>{sh.foodPacks} packs</b>
               </div>
 
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  onClick={() => admitVictims(sh)}
-                  style={{ flex: 1, padding: '9px', background: '#FFF3E0', color: '#1C1917', border: '1.5px solid #FFB74D', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 700 }}
+              {isAdmin ? (
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={() => admitVictims(sh)}
+                    style={{ flex: 1, padding: '9px', background: '#FFF3E0', color: '#1C1917', border: '1.5px solid #FFB74D', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 700 }}
+                  >
+                    Admit 5 Evacuees
+                  </button>
+                  <button
+                    onClick={() => restockShelter(sh)}
+                    style={{ flex: 1, padding: '9px', background: '#16A34A', color: '#FFFFFF', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 700 }}
+                  >
+                    Restock Supplies
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/sos"
+                  style={{
+                    display: 'block',
+                    textAlign: 'center',
+                    padding: '10px',
+                    background: '#FFF3E0',
+                    color: '#E65100',
+                    border: '1.5px solid #FFB74D',
+                    borderRadius: 8,
+                    textDecoration: 'none',
+                    fontSize: 13,
+                    fontWeight: 800,
+                  }}
                 >
-                  Admit 5 Evacuees
-                </button>
-                <button
-                  onClick={() => restockShelter(sh)}
-                  style={{ flex: 1, padding: '9px', background: '#16A34A', color: '#FFFFFF', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12.5, fontWeight: 700 }}
-                >
-                  Restock Supplies
-                </button>
-              </div>
+                  Need Evacuation to This Camp? Send SOS →
+                </Link>
+              )}
             </div>
           );
         })}

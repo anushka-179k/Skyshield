@@ -27,7 +27,7 @@ function AnimatedCounter({ target, suffix = '' }) {
   );
 }
 
-export default function About() {
+export default function About({ isAdmin, onOpenAdmin }) {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => entries.forEach((e) => e.isIntersecting && e.target.classList.add('is-visible')),
@@ -90,22 +90,8 @@ export default function About() {
             During urban floods and earthquakes, thousands of simultaneous SOS alerts overwhelm centralized servers while damaged cell towers drop connections. <b>SkyShield</b> combines an offline-capable <b>Edge Fog Gateway</b> with an <b>Elastic Auto-Scaling Cloud Backend</b> to guarantee zero packet loss and sub-second rescue dispatch.
           </p>
 
+          {/* ROLE-AWARE HERO ACTION BUTTONS */}
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Link
-              to="/map"
-              style={{
-                background: '#E65100',
-                color: '#FFFFFF',
-                textDecoration: 'none',
-                padding: '13px 24px',
-                borderRadius: 12,
-                fontWeight: 700,
-                fontSize: 14.5,
-                boxShadow: '0 8px 20px rgba(230, 81, 0, 0.32)',
-              }}
-            >
-              Launch Command Map →
-            </Link>
             <Link
               to="/sos"
               className="animate-alert-jump"
@@ -113,17 +99,53 @@ export default function About() {
                 background: '#DC2626',
                 color: '#FFFFFF',
                 textDecoration: 'none',
-                padding: '13px 22px',
+                padding: '13px 24px',
                 borderRadius: 12,
                 fontWeight: 800,
                 fontSize: 14.5,
                 boxShadow: '0 8px 20px rgba(220, 38, 38, 0.32)',
               }}
             >
-              ● Broadcast Emergency SOS
+              ● Report Emergency SOS
             </Link>
+
+            {isAdmin ? (
+              <Link
+                to="/map"
+                style={{
+                  background: '#E65100',
+                  color: '#FFFFFF',
+                  textDecoration: 'none',
+                  padding: '13px 22px',
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 14.5,
+                  boxShadow: '0 8px 20px rgba(230, 81, 0, 0.32)',
+                }}
+              >
+                Open Command Map →
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenAdmin}
+                style={{
+                  background: '#1C1917',
+                  color: '#FFB74D',
+                  border: 'none',
+                  padding: '13px 22px',
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  fontSize: 14.5,
+                  cursor: 'pointer',
+                }}
+              >
+                🔒 Command Admin Login
+              </button>
+            )}
+
             <Link
-              to="/team"
+              to="/shelters"
               style={{
                 background: '#FFF3E0',
                 color: '#1C1917',
@@ -135,7 +157,7 @@ export default function About() {
                 fontSize: 14.5,
               }}
             >
-              Meet Our Team
+              {isAdmin ? 'Shelter & Cache Ops' : 'Public Shelters'}
             </Link>
           </div>
         </div>
