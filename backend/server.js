@@ -1,6 +1,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { Redis } = require('@upstash/redis');
@@ -9,7 +10,7 @@ const { priority, allocate } = require('./matcher');
 
 const cred = process.env.FIREBASE_SERVICE_ACCOUNT_B64
   ? JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_B64, 'base64').toString())
-  : require(require('path').resolve(__dirname, process.env.FIREBASE_SERVICE_ACCOUNT));
+  : require(path.resolve(__dirname, process.env.FIREBASE_SERVICE_ACCOUNT));
 
 initializeApp({ credential: cert(cred) });
 const db = getFirestore();
@@ -18,7 +19,9 @@ const limiter = new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, '1 m
 
 const ID = process.env.INSTANCE_ID || 'api-local';
 const app = express();
-app.use(cors());
+
+// Expose custom Cloud headers to React frontend
+app.use(cors({ exposedHeaders: ['X-Cache', 'X-Instance'] }));
 app.use(express.json());
 app.use((req, res, next) => {
   res.set('X-Instance', ID);
@@ -41,7 +44,7 @@ async function saveSOS(s) {
 
 app.post('/api/sos', async (req, res) => {
   const { success } = await limiter.limit(req.ip || 'local');
-  if (!success) return res.status(429).json({ error: 'slow down' });
+  if (!success) return res.status(429).json({ error: 'Rate limit exceeded (30 req/min)' });
   await saveSOS(req.body);
   res.json({ ok: true, instance: ID });
 });
@@ -52,21 +55,30 @@ app.post('/api/sos/batch', async (req, res) => {
   res.json({ ok: true, saved: req.body.batch.length, instance: ID });
 });
 
+// Redis Cache-Aside Endpoint (15s TTL)
 app.get('/api/shelters', async (_, res) => {
   const hit = await redis.get('shelters');
-  if (hit) return res.set('X-Cache', 'HIT').json(hit);
+  if (hit) {
+    return res.set('X-Cache', 'HIT').json(hit);
+  }
   const data = (await db.collection('shelters').get()).docs.map((d) => ({ id: d.id, ...d.data() }));
-  await redis.set('shelters', data, { ex: 10 });
+  await redis.set('shelters', data, { ex: 15 });
   res.set('X-Cache', 'MISS').json(data);
 });
 
+// Update Shelter Inventory & Invalidate Redis Cache
 app.patch('/api/shelters/:id', async (req, res) => {
   const { bedsFree, foodPacks } = req.body;
-  await db.collection('shelters').doc(req.params.id).update({ bedsFree, foodPacks, updatedAt: Date.now() });
-  await redis.del('shelters');
-  res.json({ ok: true });
+  await db.collection('shelters').doc(req.params.id).update({
+    bedsFree: Number(bedsFree),
+    foodPacks: Number(foodPacks),
+    updatedAt: Date.now(),
+  });
+  await redis.del('shelters'); // Cache invalidation
+  res.json({ ok: true, cacheInvalidated: true });
 });
 
+// Heuristic Priority Auto-Allocation
 app.post('/api/allocate', async (_, res) => {
   const get = async (q) => (await q.get()).docs.map((d) => ({ id: d.id, ...d.data() }));
   const [reqs, teams, shelters] = await Promise.all([
@@ -87,6 +99,22 @@ app.post('/api/allocate', async (_, res) => {
   });
   await b.commit();
   res.json(plan);
+});
+
+// Complete Rescue Mission & Free Rescue Unit
+app.post('/api/sos/:id/resolve', async (req, res) => {
+  const sosRef = db.collection('sos').doc(req.params.id);
+  const snap = await sosRef.get();
+  if (!snap.exists) return res.status(404).json({ error: 'SOS not found' });
+
+  const data = snap.data();
+  const b = db.batch();
+  b.update(sosRef, { status: 'resolved', resolvedAt: Date.now() });
+  if (data.teamId) {
+    b.update(db.collection('teams').doc(data.teamId), { status: 'free' });
+  }
+  await b.commit();
+  res.json({ ok: true, freedTeam: data.teamId || null });
 });
 
 app.listen(process.env.PORT || 4001, () => console.log(ID, 'running on port', process.env.PORT || 4001));

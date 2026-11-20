@@ -14,7 +14,7 @@ export default function MapPage() {
 
   useEffect(() => {
     const u1 = onSnapshot(query(collection(db, 'sos'), where('status', 'in', ['open', 'assigned'])), (s) =>
-      setSos(s.docs.map((d) => ({ id: d.id, ...d.data() })))
+      setSos(s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (b.priority || 0) - (a.priority || 0)))
     );
     const u2 = onSnapshot(collection(db, 'shelters'), (s) =>
       setShelters(s.docs.map((d) => ({ id: d.id, ...d.data() })))
@@ -32,6 +32,10 @@ export default function MapPage() {
     } finally {
       setAllocating(false);
     }
+  }
+
+  async function resolveSOS(id) {
+    await fetch(`${LB}/api/sos/${id}/resolve`, { method: 'POST' });
   }
 
   const openCount = sos.filter((s) => s.status === 'open').length;
@@ -75,12 +79,9 @@ export default function MapPage() {
       </div>
 
       {/* Tactical Map + Legend */}
-      <div style={{ position: 'relative', height: '68vh', borderRadius: 12, overflow: 'hidden', border: '1px solid #1e293b', boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
+      <div style={{ position: 'relative', height: '56vh', borderRadius: 12, overflow: 'hidden', border: '1px solid #1e293b', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', marginBottom: 22 }}>
         <MapContainer center={[28.62, 77.21]} zoom={11} style={{ height: '100%', width: '100%' }}>
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; OpenStreetMap contributors'
-          />
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
 
           {sos.map((s) => {
             const color = s.priority > 60 ? '#ef4444' : s.priority > 40 ? '#f97316' : '#eab308';
@@ -129,13 +130,65 @@ export default function MapPage() {
           ))}
         </MapContainer>
 
-        {/* Floating Map Legend */}
-        <div style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 999, background: 'rgba(15, 23, 42, 0.92)', border: '1px solid #334155', borderRadius: 8, padding: '10px 14px', fontSize: 12, display: 'flex', gap: 16 }}>
+        <div style={{ position: 'absolute', bottom: 14, left: 14, zIndex: 999, background: 'rgba(15, 23, 42, 0.92)', border: '1px solid #334155', borderRadius: 8, padding: '8px 14px', fontSize: 12, display: 'flex', gap: 16 }}>
           <span><b style={{ color: '#ef4444' }}>●</b> High Priority SOS</span>
           <span><b style={{ color: '#38bdf8' }}>●</b> Relief Shelter</span>
           <span><b style={{ color: '#4ade80' }}>●</b> Free Rescue Unit</span>
           <span><b style={{ color: '#22c55e' }}>---</b> Active Dispatch Route</span>
         </div>
+      </div>
+
+      {/* LIVE PRIORITY TRIAGE & MISSION CONTROL TABLE */}
+      <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: 12, padding: 20 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Live Priority Triage & Active Rescue Missions</h3>
+        {sos.length === 0 ? (
+          <p style={{ fontSize: 13, color: '#94a3b8' }}>No active SOS alerts. Broadcast one from Citizen SOS or run a Disaster Surge in Cloud & Fog Infra.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #1e293b', color: '#94a3b8' }}>
+                  <th style={{ padding: '10px 8px' }}>PRIORITY</th>
+                  <th style={{ padding: '10px 8px' }}>INCIDENT TYPE</th>
+                  <th style={{ padding: '10px 8px' }}>STRANDED</th>
+                  <th style={{ padding: '10px 8px' }}>FOG MERGED</th>
+                  <th style={{ padding: '10px 8px' }}>DISPATCHED UNIT</th>
+                  <th style={{ padding: '10px 8px' }}>STATUS</th>
+                  <th style={{ padding: '10px 8px' }}>ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sos.map((s) => {
+                  const team = teams.find((t) => t.id === s.teamId);
+                  return (
+                    <tr key={s.id} style={{ borderBottom: '1px solid #1e293b' }}>
+                      <td style={{ padding: '10px 8px', fontWeight: 700, color: s.priority > 60 ? '#f87171' : '#fbbf24' }}>
+                        {s.priority} pts
+                      </td>
+                      <td style={{ padding: '10px 8px', textTransform: 'uppercase', fontWeight: 600 }}>{s.type}</td>
+                      <td style={{ padding: '10px 8px' }}>{s.people} people</td>
+                      <td style={{ padding: '10px 8px', color: '#38bdf8' }}>{s.reportCount || 1}x pings</td>
+                      <td style={{ padding: '10px 8px' }}>{team ? `${team.name} (ETA ${s.etaMin}m)` : 'Awaiting Dispatch'}</td>
+                      <td style={{ padding: '10px 8px' }}>
+                        <span style={{ padding: '3px 8px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: s.status === 'assigned' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: s.status === 'assigned' ? '#38bdf8' : '#f87171' }}>
+                          {s.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px 8px' }}>
+                        <button
+                          onClick={() => resolveSOS(s.id)}
+                          style={{ padding: '6px 12px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                        >
+                          Mark Rescued
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

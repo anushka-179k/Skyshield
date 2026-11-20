@@ -6,6 +6,7 @@ let MODE = 'leastconn';
 const MIN = 1, MAX = 5;
 let nodes = [], nextPort = 4001, rr = 0, hits = 0, rps = 0;
 const CORS = { 'Access-Control-Allow-Origin': '*' };
+const LB_PORT = process.env.LB_PORT || process.env.PORT || 4000;
 
 function spawn() {
   const port = nextPort++;
@@ -51,6 +52,24 @@ setInterval(() => {
 
 http
   .createServer((req, res) => {
+    // Forward /fog/* requests to Edge Fog Node on port 5000 (for single-URL cloud deployment)
+    if (req.url.startsWith('/fog')) {
+      const fogReq = http.request(
+        { port: 5000, path: req.url, method: req.method, headers: req.headers },
+        (r) => {
+          res.writeHead(r.statusCode, r.headers);
+          r.pipe(res);
+        }
+      );
+      fogReq.on('error', () => {
+        if (!res.headersSent) {
+          res.writeHead(502, CORS);
+          res.end('Fog node unavailable');
+        }
+      });
+      return req.pipe(fogReq);
+    }
+
     if (req.url.startsWith('/lb/stats')) {
       res.writeHead(200, { ...CORS, 'Content-Type': 'application/json' });
       return res.end(
@@ -100,6 +119,6 @@ http
     });
     req.pipe(up);
   })
-  .listen(4000, () => console.log('Load Balancer running on port 4000'));
+  .listen(LB_PORT, () => console.log('Load Balancer running on port', LB_PORT));
 
 spawn();
