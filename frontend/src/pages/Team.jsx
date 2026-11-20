@@ -8,7 +8,7 @@ const TEAM_MEMBERS = [
     rollNo: '03301012024',
     role: 'Cloud Architecture & Load Balancing',
     module: 'TIER 02 • ELASTIC COMPUTE',
-    photo: '/team/member1.jpg',
+    basePath: 'member1',
     bio: 'Designed and implemented the Layer-7 reverse proxy load balancer, dynamic RPS-based auto-scaling workers, and automated health-check failover recovery.',
   },
   {
@@ -17,7 +17,7 @@ const TEAM_MEMBERS = [
     rollNo: '03101012024',
     role: 'Edge Fog Gateway & Offline Sync',
     module: 'TIER 01 • EDGE & OFFLINE',
-    photo: '/team/member2.jpg',
+    basePath: 'member2',
     bio: 'Built the local Fog Node spatial deduplicator (~110m radius clustering), RAM store-and-forward buffer for severed uplinks, and IndexedDB offline SOS queue.',
   },
   {
@@ -26,7 +26,7 @@ const TEAM_MEMBERS = [
     rollNo: '03401012024',
     role: 'Command Map & Priority Dispatch',
     module: 'TIER 03 • TACTICAL DISPATCH',
-    photo: '/team/member3.jpg',
+    basePath: 'member3',
     bio: 'Engineered the real-time Leaflet GIS command dashboard, priority scoring heuristic matcher, and live Firestore rescue unit routing pipeline.',
   },
   {
@@ -35,7 +35,7 @@ const TEAM_MEMBERS = [
     rollNo: '01401012024',
     role: 'Redis Caching & System UX',
     module: 'TIER 03 • CACHE & INTERFACE',
-    photo: '/team/member4.jpg',
+    basePath: 'member4',
     bio: 'Implemented Upstash Redis Cache-Aside shelter inventory management with TTL invalidation, sliding-window rate limiting, and the high-visibility alert UI.',
   },
 ];
@@ -57,6 +57,39 @@ const COLLAB_WORKFLOW = [
     detail: 'Tested together under simulated 60-ping disaster surges, severed cloud links, and worker node crashes to verify zero packet loss.',
   },
 ];
+
+function TeamPhoto({ basePath, alt }) {
+  const candidates = [
+    `/team/${basePath}.jpg`,
+    `/team/${basePath}.jpeg`,
+    `/team/${basePath}.png`,
+    `/team/${basePath}.webp`,
+    `/team/${basePath}.JPG`,
+    `/team/${basePath}.jpg.jpg`,
+    `/Team/${basePath}.jpg`,
+    `/Team/${basePath}.jpeg`,
+    `/Team/${basePath}.png`,
+  ];
+
+  function handleImgError(e) {
+    const img = e.currentTarget;
+    const nextIdx = Number(img.dataset.tryIdx || 0) + 1;
+    if (nextIdx < candidates.length) {
+      img.dataset.tryIdx = String(nextIdx);
+      img.src = candidates[nextIdx];
+    }
+  }
+
+  return (
+    <img
+      src={candidates[0]}
+      data-try-idx="0"
+      onError={handleImgError}
+      alt={alt}
+      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+    />
+  );
+}
 
 export default function Team() {
   useEffect(() => {
@@ -136,11 +169,7 @@ export default function Team() {
                   marginBottom: 16,
                 }}
               >
-                <img
-                  src={m.photo}
-                  alt={m.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
+                <TeamPhoto basePath={m.basePath} alt={m.name} />
               </div>
 
               <span
@@ -201,7 +230,7 @@ export default function Team() {
         ))}
       </div>
 
-      {/* HOW WE BUILT IT TOGETHER (TEAMWORK HIGHLIGHT STRIP) */}
+      {/* HOW WE BUILT IT TOGETHER */}
       <div
         className="reveal-item"
         style={{
@@ -293,20 +322,6 @@ export default function Team() {
         </div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <Link
-            to="/map"
-            style={{
-              background: '#E65100',
-              color: '#FFFFFF',
-              textDecoration: 'none',
-              padding: '12px 20px',
-              borderRadius: 10,
-              fontWeight: 700,
-              fontSize: 14,
-            }}
-          >
-            Open Command Map →
-          </Link>
-          <Link
             to="/sos"
             className="animate-alert-jump"
             style={{
@@ -319,7 +334,21 @@ export default function Team() {
               fontSize: 14,
             }}
           >
-            Broadcast SOS
+            ● Report Emergency SOS
+          </Link>
+          <Link
+            to="/shelters"
+            style={{
+              background: '#E65100',
+              color: '#FFFFFF',
+              textDecoration: 'none',
+              padding: '12px 20px',
+              borderRadius: 10,
+              fontWeight: 700,
+              fontSize: 14,
+            }}
+          >
+            View Relief Shelters →
           </Link>
         </div>
       </div>
